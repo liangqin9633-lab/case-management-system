@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>刑事律师案件管理系统</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div>
+        <h1>刑事律师案件管理系统</h1>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary-grid" id="summaryGrid"></section>
+    <section class="top-bar">
+      <div class="tabs" id="categoryTabs"></div>
+      <button class="primary-button" id="openFormButton">新增记录</button>
+    </section>
+
+    <section class="content">
+      <div class="panel panel-left">
+        <div class="panel-block">
+          <h2>当前分类总表</h2>
+          <div id="listPanel"></div>
+        </div>
+        <div class="panel-block">
+          <h2>详细分表</h2>
+          <div id="detailPanel" class="detail-panel hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="floating-form hidden" id="floatingForm">
+      <div class="floating-card">
+        <div class="floating-header">
+          <div>
+            <h2 id="formTitle">新增记录</h2>
+            <p class="floating-subtitle">仅在需要时打开表单录入或修改数据</p>
+          </div>
+          <button type="button" class="close-button" id="closeFormButton">×</button>
+        </div>
+        <form id="itemForm">
+          <div id="titleField">
+            <label>案件名称
+              <input id="itemTitle" type="text" placeholder="请输入案件名称" />
+            </label>
+          </div>
+          <div id="clientField">
+            <label>委托人 / 客户
+              <input id="itemClient" type="text" placeholder="请输入委托人或客户" />
+            </label>
+          </div>
+          <div id="contactField">
+            <label>联系方式
+              <input id="itemContact" type="text" placeholder="请输入联系方式" />
+            </label>
+          </div>
+          <div id="amountField">
+            <label>主金额
+              <input id="itemAmount" type="text" placeholder="请输入金额" />
+            </label>
+          </div>
+          <div id="statusField">
+            <label>状态
+              <input id="itemStatus" type="text" placeholder="例如：处理中 / 跟进中 / 已完成" />
+            </label>
+          </div>
+          <div id="dynamicFields"></div>
+          <label>附件
+            <input id="itemImages" type="file" accept="image/*" multiple />
+          </label>
+          <div id="imagePreview" class="image-preview"></div>
+          <label>备注说明
+            <textarea id="itemDetails" rows="4" placeholder="补充说明、案件进展、线索备注"></textarea>
+          </label>
+          <div class="form-actions">
+            <button type="submit">保存</button>
+            <button type="button" id="resetButton">重置</button>
+          </div>
+        </form>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "case-management-system",
+  "version": "1.0.0",
+  "description": "刑事律师案件管理系统：在办案件、客户线索、案件收款分类管理",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0"
+  }
+}
