@@ -52,17 +52,25 @@ const categoryDefinitions = {
     fields: [
       { key: 'case_type', label: '案件类型', type: 'select', options: caseTypeOptions },
       { key: 'case_name', label: '案件名称', type: 'text' },
+      { key: 'client', label: '委托人', type: 'text' },
+      { key: 'client_contact', label: '委托人联系方式', type: 'text' },
       { key: 'procedure_stage', label: '程序阶段', type: 'text' },
       { key: 'investigation_agency', label: '侦查机关', type: 'text' },
+      { key: 'investigation_contact', label: '联系人', type: 'text', condition: (v) => Boolean(v.investigation_agency) },
       { key: 'detention_date', label: '拘留时间', type: 'date', condition: (v) => Boolean(v.investigation_agency) },
       { key: 'arrest_date', label: '逮捕时间', type: 'date', condition: (v) => Boolean(v.investigation_agency) },
       { key: 'procuratorate', label: '公诉机关', type: 'text' },
+      { key: 'procuratorate_contact', label: '联系人', type: 'text', condition: (v) => Boolean(v.procuratorate) },
       { key: 'transfer_date', label: '移送审查起诉时间', type: 'date', condition: (v) => Boolean(v.procuratorate) },
       { key: 'sentence_suggestion', label: '量刑建议', type: 'text', condition: (v) => Boolean(v.procuratorate) },
       { key: 'court_first', label: '一审法院', type: 'text' },
+      { key: 'court_first_contact', label: '联系人', type: 'text', condition: (v) => Boolean(v.court_first) },
       { key: 'first_trial_date', label: '一审庭审时间', type: 'date', condition: (v) => Boolean(v.court_first) },
       { key: 'court_second', label: '二审法院', type: 'text' },
-      { key: 'second_trial_date', label: '二审庭审时间', type: 'date', condition: (v) => Boolean(v.court_second) },
+      { key: 'court_second_contact', label: '联系人', type: 'text', condition: (v) => Boolean(v.court_second) },
+      { key: 'show_second_trial', label: '是否填写二审庭审时间', type: 'checkbox', condition: (v) => Boolean(v.court_second) },
+      { key: 'second_trial_date', label: '二审庭审时间', type: 'date', condition: (v) => Boolean(v.court_second) && Boolean(v.show_second_trial) },
+      { key: 'work_logs', label: '工作记录', type: 'work_log_table', className: 'field-full' },
       { key: 'case_summary', label: '案情简介', type: 'textarea', className: 'field-full' }
     ],
     genericVisibility: { title: false, client: false, contact: false, amount: false, status: true }
@@ -301,6 +309,15 @@ function createFieldMarkup(field, value = '') {
     ]);
   }
 
+  if (field.type === 'work_log_table') {
+    const rows = Array.isArray(value) && value.length ? value : [{ date: '', content: '', attorney: '' }];
+    return createTableMarkup(field, rows, [
+      { key: 'date', label: '时间', type: 'date' },
+      { key: 'content', label: '内容', type: 'text' },
+      { key: 'attorney', label: '承办人', type: 'text' }
+    ]);
+  }
+
   return `
     <label class="${className}">${field.label}
       <input type="${field.type || 'text'}" name="${field.key}" value="${value || ''}" placeholder="${field.label}" />
@@ -487,8 +504,8 @@ function renderDetail(item) {
 
   pushRow('主题', item.title || getDisplayTitle(item, meta));
   if (item.category !== 'reserve') {
-    pushRow('客户 / 委托人', item.client || meta.entrustor || item.contact);
-    pushRow('联系方式', item.contact || meta.entrust_contact || meta.contact);
+    pushRow('客户 / 委托人', item.client || meta.client || meta.entrustor || item.contact);
+    pushRow('联系方式', item.contact || meta.client_contact || meta.entrust_contact || meta.contact);
   }
   pushRow('更新时间', new Date(item.updated_at).toLocaleString());
   pushRow('备注说明', item.details);
@@ -522,6 +539,14 @@ function renderDetail(item) {
       '分成情况',
       meta.split_entries
         .map((entry) => `${entry.person || ''} | ${entry.reason || ''} | ${entry.ratio || ''} | ${formatMoney(entry.amount)} | ${formatMoney(entry.self_amount)}`)
+        .join('\n')
+    );
+  }
+  if (Array.isArray(meta.work_logs) && meta.work_logs.length) {
+    pushRow(
+      '工作记录',
+      meta.work_logs
+        .map((entry) => `${entry.date || ''} | ${entry.content || ''} | ${entry.attorney || ''}`)
         .join('\n')
     );
   }
@@ -581,21 +606,33 @@ dynamicFields.addEventListener('click', (event) => {
     const field = categoryDefinitions[activeCategory].fields.find((f) => f.key === tableKey);
     if (!field) return;
     const row = {};
-    tbody.insertAdjacentHTML('beforeend', createTableRow(tableKey, index, row, field.type === 'amount_table' ? [
-      { key: 'nature', label: '性质', type: 'text' },
-      { key: 'date', label: '收款时间', type: 'date' },
-      { key: 'amount', label: '收款金额', type: 'number' }
-    ] : field.type === 'invoice_table' ? [
-      { key: 'date', label: '开票日期', type: 'date' },
-      { key: 'amount', label: '开票金额', type: 'number' },
-      { key: 'number', label: '发票号', type: 'text' }
-    ] : [
-      { key: 'person', label: '分成人', type: 'text' },
-      { key: 'reason', label: '分成原因', type: 'text' },
-      { key: 'ratio', label: '分成比例', type: 'text' },
-      { key: 'amount', label: '分成金额', type: 'number' },
-      { key: 'self_amount', label: '本人应收金额', type: 'number' }
-    ]));
+    const columns =
+      field.type === 'amount_table'
+        ? [
+            { key: 'nature', label: '性质', type: 'text' },
+            { key: 'date', label: '收款时间', type: 'date' },
+            { key: 'amount', label: '收款金额', type: 'number' }
+          ]
+        : field.type === 'invoice_table'
+        ? [
+            { key: 'date', label: '开票日期', type: 'date' },
+            { key: 'amount', label: '开票金额', type: 'number' },
+            { key: 'number', label: '发票号', type: 'text' }
+          ]
+        : field.type === 'work_log_table'
+        ? [
+            { key: 'date', label: '时间', type: 'date' },
+            { key: 'content', label: '内容', type: 'text' },
+            { key: 'attorney', label: '承办人', type: 'text' }
+          ]
+        : [
+            { key: 'person', label: '分成人', type: 'text' },
+            { key: 'reason', label: '分成原因', type: 'text' },
+            { key: 'ratio', label: '分成比例', type: 'text' },
+            { key: 'amount', label: '分成金额', type: 'number' },
+            { key: 'self_amount', label: '本人应收金额', type: 'number' }
+          ];
+    tbody.insertAdjacentHTML('beforeend', createTableRow(tableKey, index, row, columns));
     return;
   }
 
